@@ -21,15 +21,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf().disable() // Отключаем CSRF, так как используем JWT
-                .authorizeHttpRequests()
-                .antMatchers("/api/users/login", "/api/users/register").permitAll() // Разрешаем доступ к этим эндпоинтам без аутентификации
-                .antMatchers("/api/admin/**").hasRole("ADMIN") // Доступ к admin-ресурсам только у ADMIN
-                .anyRequest().authenticated() // Все остальные запросы требуют аутентификации
-                .and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Используем безсессионную аутентификацию
-                .and()
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class); // Добавляем наш JWT-фильтр
+                .csrf(csrf -> csrf.disable()) // Отключаем CSRF
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/users/login", "/api/users/register").permitAll() // Разрешаем эти эндпоинты
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // Доступ только для ADMIN
+                        .anyRequest().authenticated() // Все остальные запросы требуют аутентификации
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 

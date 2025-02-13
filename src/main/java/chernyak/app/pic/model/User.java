@@ -3,10 +3,6 @@ package chernyak.app.pic.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
-public enum Role {
-    USER, ADMIN
-}
-
 // Класс-сущность, представляющий пользователя в системе
 @Entity // Определяет, что этот класс является JPA-сущностью (таблицей в БД)
 @Table(name = "users") // Определяет имя таблицы в базе данных
