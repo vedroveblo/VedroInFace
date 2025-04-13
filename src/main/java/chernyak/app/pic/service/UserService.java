@@ -6,6 +6,7 @@ import chernyak.app.pic.repository.UserRepository;
 import chernyak.app.pic.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 
@@ -13,14 +14,17 @@ import java.util.Optional;
 // Отвечает за логику регистрации и аутентификации
 @Service
 public class UserService {
+
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder; // ⚠️ интерфейс, не BCrypt напрямую
     private final JwtUtil jwtUtil;
 
     @Autowired
-    public UserService(UserRepository userRepository, JwtUtil jwtUtil) {
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtUtil jwtUtil) {
         this.userRepository = userRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder; // ✅ получаем из Spring
         this.jwtUtil = jwtUtil;
     }
 
@@ -40,11 +44,32 @@ public class UserService {
     // Метод для аутентификации пользователя и генерации JWT-токена
     public String authenticateUser(String username, String password) {
         Optional<User> userOptional = userRepository.findByUsername(username);
-        if (userOptional.isPresent() && passwordEncoder.matches(password, userOptional.get().getPassword())) {
-            return jwtUtil.generateToken(username);
+
+        if (userOptional.isEmpty()) {
+            System.out.println("⛔ User not found: " + username);
+            throw new RuntimeException("User not found");
         }
+
+        User user = userOptional.get();
+
+        System.out.println("✅ User found: " + user.getUsername());
+        System.out.println("🔐 Input password: " + password);
+        System.out.println("🧠 Stored hash: " + user.getPassword());
+
+        boolean result = passwordEncoder.matches(password, user.getPassword());
+        System.out.println("🔍 Password match: " + result);
+
+        if (result) {
+            String token = jwtUtil.generateToken(username);
+            System.out.println("✅ JWT token generated");
+            return token;
+        }
+
         throw new RuntimeException("Invalid credentials");
     }
+
+
+
 }
 
 
